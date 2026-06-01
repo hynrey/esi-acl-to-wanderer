@@ -22,8 +22,14 @@ async def run_forever(rules, settings, state) -> None:
             for rule in rules:
                 if stop_event.is_set():
                     break
-                async with WandererClient(rule.wanderer_base_url, rule.wanderer_acl_token) as wanderer:
-                    await reconcile(state, rule, settings, esi, wanderer)
+                # Guard every rule: an unhandled error (e.g. ESI 401/403, Wanderer 5xx)
+                # must not crash the loop — log it and keep the service alive so the
+                # other rules and the next cycle still run.
+                try:
+                    async with WandererClient(rule.wanderer_base_url, rule.wanderer_acl_token) as wanderer:
+                        await reconcile(state, rule, settings, esi, wanderer)
+                except Exception:
+                    logger.exception("Rule %s crashed this cycle; continuing", rule.name)
 
             interval = min(r.interval_seconds for r in rules)
             try:
@@ -38,8 +44,14 @@ async def run_once(rules, settings, state) -> bool:
     all_ok = True
     async with EsiClient(settings.esi_user_agent, settings.esi_compatibility_date) as esi:
         for rule in rules:
-            async with WandererClient(rule.wanderer_base_url, rule.wanderer_acl_token) as wanderer:
-                result = await reconcile(state, rule, settings, esi, wanderer)
-                if result.status == "error":
-                    all_ok = False
+            # Same guard for the one-shot path so one bad rule doesn't abort the rest;
+            # any failure still flips the exit code for cron/systemd.
+            try:
+                async with WandererClient(rule.wanderer_base_url, rule.wanderer_acl_token) as wanderer:
+                    result = await reconcile(state, rule, settings, esi, wanderer)
+                    if result.status == "error":
+                        all_ok = False
+            except Exception:
+                logger.exception("Rule %s crashed", rule.name)
+                all_ok = False
     return all_ok
