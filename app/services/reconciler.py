@@ -99,7 +99,11 @@ async def reconcile(state, rule, settings, esi, wanderer, dry_run: bool = False)
             result.status = "partial"
             logger.error("Rule %s: failed to remove %d: %s", rule.name, eid, e)
 
-    state.update_rule_state(rule.name, new_etag, new_managed)
+    # On a partial run, do NOT advance the etag: a future ESI 304 would short-circuit
+    # the reconcile and the failed members would never be retried. Keeping the old etag
+    # forces a full re-fetch next cycle so failed add/update/remove get another attempt.
+    etag_to_save = None if result.status == "partial" else new_etag
+    state.update_rule_state(rule.name, etag_to_save, new_managed)
 
     elapsed_ms = int((time.monotonic() - start) * 1000)
     logger.info(

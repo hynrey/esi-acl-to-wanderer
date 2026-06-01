@@ -153,6 +153,82 @@ async def test_dry_run_makes_no_wanderer_calls(tmp_path: Path):
 
 
 @pytest.mark.asyncio
+async def test_esi_304_skips_reconcile_without_touching_wanderer(tmp_path: Path):
+    """ESI 304 (acl_dto None) must return early — no get_acl, no mutations."""
+    state = _state(tmp_path, managed={"100": {"type": "character", "role": "viewer", "last_seen": 0}})
+    esi = AsyncMock()
+    esi.get_access_list.return_value = (None, "etag1")  # 304: unchanged
+    wanderer = AsyncMock()
+
+    result = await reconcile(state, _rule(), _settings(), esi, wanderer)
+
+    assert result.status == "skipped"
+    wanderer.get_acl.assert_not_called()
+    wanderer.add_member.assert_not_called()
+    wanderer.update_member_role.assert_not_called()
+    wanderer.remove_member.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_partial_failure_keeps_failed_member_managed(tmp_path: Path):
+    """A failed remove must leave the member in managed (retry next run) and set status=partial."""
+    state = _state(tmp_path, managed={
+        "100": {"type": "character", "role": "viewer", "last_seen": 0},
+        "200": {"type": "character", "role": "viewer", "last_seen": 0},
+    })
+    esi = _esi_mock([])  # both gone from ESI → both desired-for-removal
+    wanderer = _wanderer_mock([
+        WandererMemberDTO(eve_id=100, entry_type=AclEntryType.character, role="viewer"),
+        WandererMemberDTO(eve_id=200, entry_type=AclEntryType.character, role="viewer"),
+    ])
+    # 100 removal fails, 200 succeeds
+    async def remove_side_effect(acl_id, eve_id):
+        if eve_id == 100:
+            raise RuntimeError("wanderer 500")
+    wanderer.remove_member.side_effect = remove_side_effect
+
+    result = await reconcile(state, _rule(), _settings(), esi, wanderer)
+
+    assert result.status == "partial"
+    assert result.removed == 1
+    assert len(result.errors) == 1
+    managed_after = state.get_managed("test-rule")
+    assert "100" in managed_after  # failed member retained
+    assert "200" not in managed_after  # successfully removed
+
+
+@pytest.mark.asyncio
+async def test_auth_error_sets_error_status_no_wanderer_calls(tmp_path: Path):
+    """Expired/invalid token → status=error, no Wanderer or ESI calls."""
+    state = _state(tmp_path)
+    state.get_token = MagicMock(return_value=None)  # forces EsiAuthError in get_valid_access_token
+    esi = AsyncMock()
+    wanderer = AsyncMock()
+
+    result = await reconcile(state, _rule(), _settings(), esi, wanderer)
+
+    assert result.status == "error"
+    assert len(result.errors) == 1
+    esi.get_access_list.assert_not_called()
+    wanderer.get_acl.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_managed_set_persisted_after_add(tmp_path: Path):
+    """Round-trip: a successful add writes the member into persisted state."""
+    state = _state(tmp_path)
+    esi = _esi_mock([AclEntryDTO(eve_id=100, entry_type=AclEntryType.character, access=EsiAccessType.allow)])
+    wanderer = _wanderer_mock([])
+
+    await reconcile(state, _rule(), _settings(), esi, wanderer)
+
+    managed_after = state.get_managed("test-rule")
+    assert "100" in managed_after
+    assert managed_after["100"]["role"] == "viewer"
+    assert managed_after["100"]["type"] == "character"
+
+
+@pytest.mark.asyncio
 async def test_idempotent_second_run(tmp_path: Path):
     state = _state(tmp_path, managed={"100": {"type": "character", "role": "viewer", "last_seen": 0}})
     esi = _esi_mock([AclEntryDTO(eve_id=100, entry_type=AclEntryType.character, access=EsiAccessType.allow)])
