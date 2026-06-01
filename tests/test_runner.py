@@ -51,14 +51,16 @@ async def test_run_once_one_rule_crash_does_not_abort_others(tmp_path: Path):
         result.status = "ok"
         return result
 
-    with patch("app.runner.reconcile", side_effect=fake_reconcile), \
-         patch("app.runner.EsiClient", return_value=AsyncMock()), \
-         patch("app.runner.WandererClient", return_value=AsyncMock()):
+    with (
+        patch("app.runner.reconcile", side_effect=fake_reconcile),
+        patch("app.runner.EsiClient", return_value=AsyncMock()),
+        patch("app.runner.WandererClient", return_value=AsyncMock()),
+    ):
         ok = await run_once(rules, _settings(), state)
 
-    assert ok is False           # bad rule flips exit code
-    assert "good" in calls       # good rule still ran
-    assert "bad" in calls        # bad rule was attempted
+    assert ok is False  # bad rule flips exit code
+    assert "good" in calls  # good rule still ran
+    assert "bad" in calls  # bad rule was attempted
 
 
 @pytest.mark.asyncio
@@ -71,9 +73,11 @@ async def test_run_once_all_ok_returns_true(tmp_path: Path):
         result.status = "ok"
         return result
 
-    with patch("app.runner.reconcile", side_effect=fake_reconcile), \
-         patch("app.runner.EsiClient", return_value=AsyncMock()), \
-         patch("app.runner.WandererClient", return_value=AsyncMock()):
+    with (
+        patch("app.runner.reconcile", side_effect=fake_reconcile),
+        patch("app.runner.EsiClient", return_value=AsyncMock()),
+        patch("app.runner.WandererClient", return_value=AsyncMock()),
+    ):
         ok = await run_once(rules, _settings(), state)
 
     assert ok is True

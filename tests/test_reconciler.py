@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from app.config import RuleConfig
-from app.schemas import AclEntryDTO, AclEntryType, AccessListDTO, EsiAccessType, WandererAclDTO, WandererMemberDTO
-from app.services.reconciler import RunResult, reconcile
+from app.schemas import AccessListDTO, AclEntryDTO, AclEntryType, EsiAccessType, WandererAclDTO, WandererMemberDTO
+from app.services.reconciler import reconcile
 from app.state import StateManager
 
 
@@ -172,19 +172,26 @@ async def test_esi_304_skips_reconcile_without_touching_wanderer(tmp_path: Path)
 @pytest.mark.asyncio
 async def test_partial_failure_keeps_failed_member_managed(tmp_path: Path):
     """A failed remove must leave the member in managed (retry next run) and set status=partial."""
-    state = _state(tmp_path, managed={
-        "100": {"type": "character", "role": "viewer", "last_seen": 0},
-        "200": {"type": "character", "role": "viewer", "last_seen": 0},
-    })
+    state = _state(
+        tmp_path,
+        managed={
+            "100": {"type": "character", "role": "viewer", "last_seen": 0},
+            "200": {"type": "character", "role": "viewer", "last_seen": 0},
+        },
+    )
     esi = _esi_mock([])  # both gone from ESI → both desired-for-removal
-    wanderer = _wanderer_mock([
-        WandererMemberDTO(eve_id=100, entry_type=AclEntryType.character, role="viewer"),
-        WandererMemberDTO(eve_id=200, entry_type=AclEntryType.character, role="viewer"),
-    ])
+    wanderer = _wanderer_mock(
+        [
+            WandererMemberDTO(eve_id=100, entry_type=AclEntryType.character, role="viewer"),
+            WandererMemberDTO(eve_id=200, entry_type=AclEntryType.character, role="viewer"),
+        ]
+    )
+
     # 100 removal fails, 200 succeeds
     async def remove_side_effect(acl_id, eve_id):
         if eve_id == 100:
             raise RuntimeError("wanderer 500")
+
     wanderer.remove_member.side_effect = remove_side_effect
 
     result = await reconcile(state, _rule(), _settings(), esi, wanderer)

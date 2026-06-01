@@ -1,5 +1,10 @@
 # esi-acl-to-wanderer
 
+[![CI](https://github.com/hynrey/esi-acl-to-wanderer/actions/workflows/ci.yml/badge.svg)](https://github.com/hynrey/esi-acl-to-wanderer/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue)](https://www.python.org/)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
 One-way sync of an **EVE Online ESI Access List** → a **Wanderer ACL**. A lean Python
 service: no database, no broker. ESI is the source of truth; the service brings the
 Wanderer ACL into line with it without ever touching members it didn't add.

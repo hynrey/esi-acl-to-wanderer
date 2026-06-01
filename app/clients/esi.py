@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
@@ -43,9 +42,7 @@ class EsiClient:
         if remain and int(remain) == 0:
             reset = int(response.headers.get("X-ESI-Error-Limit-Reset", 60))
             logger.warning("ESI error limit reached, backing off %ds", reset)
-            raise httpx.HTTPStatusError(
-                "ESI error limit reached", request=response.request, response=response
-            )
+            raise httpx.HTTPStatusError("ESI error limit reached", request=response.request, response=response)
 
     @retry(
         retry=retry_if_exception(_should_retry),
@@ -58,8 +55,8 @@ class EsiClient:
         character_id: int,
         access_list_id: int,
         token: str,
-        etag: Optional[str] = None,
-    ) -> tuple[Optional[AccessListDTO], Optional[str]]:
+        etag: str | None = None,
+    ) -> tuple[AccessListDTO | None, str | None]:
         """
         Returns (AccessListDTO, new_etag) or (None, old_etag) on 304.
         """

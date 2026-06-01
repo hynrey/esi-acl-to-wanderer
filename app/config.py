@@ -25,12 +25,14 @@ class RuleConfig(BaseModel):
 
 def _interpolate(obj: Any) -> Any:
     if isinstance(obj, str):
+
         def replace(m: re.Match) -> str:
             var = m.group(1)
             val = os.environ.get(var)
             if val is None:
                 raise ValueError(f"Environment variable {var!r} required by config but not set")
             return val
+
         return re.sub(r"\$\{([^}]+)\}", replace, obj)
     if isinstance(obj, dict):
         return {k: _interpolate(v) for k, v in obj.items()}

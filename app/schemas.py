@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from enum import Enum
+
 from pydantic import BaseModel
 
 
@@ -58,7 +60,9 @@ class AccessListDTO(BaseModel):
         for c in membership.characters:
             entries.append(AclEntryDTO(eve_id=c.character_id, entry_type=AclEntryType.character, access=c.access))
         for corp in membership.corporations:
-            entries.append(AclEntryDTO(eve_id=corp.corporation_id, entry_type=AclEntryType.corporation, access=corp.access))
+            entries.append(
+                AclEntryDTO(eve_id=corp.corporation_id, entry_type=AclEntryType.corporation, access=corp.access)
+            )
         for a in membership.alliances:
             entries.append(AclEntryDTO(eve_id=a.alliance_id, entry_type=AclEntryType.alliance, access=a.access))
         return cls(id=data["id"], name=data["name"], allow_everyone=membership.allow_everyone, entries=entries)

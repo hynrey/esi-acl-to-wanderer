@@ -70,13 +70,19 @@ def enroll(character_id: int, client_id: str, client_secret: str, callback_url: 
     parsed = urllib.parse.urlparse(callback_url)
     port = parsed.port or 8765
 
-    auth_url = ESI_AUTH_URL + "?" + urllib.parse.urlencode({
-        "response_type": "code",
-        "redirect_uri": callback_url,
-        "client_id": client_id,
-        "scope": " ".join(SCOPES),
-        "state": state_param,
-    })
+    auth_url = (
+        ESI_AUTH_URL
+        + "?"
+        + urllib.parse.urlencode(
+            {
+                "response_type": "code",
+                "redirect_uri": callback_url,
+                "client_id": client_id,
+                "scope": " ".join(SCOPES),
+                "state": state_param,
+            }
+        )
+    )
 
     code_holder: dict = {}
     got_code = threading.Event()

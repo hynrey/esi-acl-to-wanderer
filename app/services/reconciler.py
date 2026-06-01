@@ -51,7 +51,8 @@ async def reconcile(state, rule, settings, esi, wanderer, dry_run: bool = False)
 
     to_add = {eid: m for eid, m in desired.items() if eid not in current_by_id}
     to_update = {
-        eid: m for eid, m in desired.items()
+        eid: m
+        for eid, m in desired.items()
         if eid in current_by_id and eid in managed_ids and current_by_id[eid].role != m.role
     }
     to_remove = {eid for eid in managed_ids if eid not in desired and eid not in protected}
@@ -61,7 +62,13 @@ async def reconcile(state, rule, settings, esi, wanderer, dry_run: bool = False)
         result.updated = len(to_update)
         result.removed = len(to_remove)
         result.status = "dry_run"
-        logger.info("DRY RUN rule=%s add=%d update=%d remove=%d", rule.name, result.added, result.updated, result.removed)
+        logger.info(
+            "DRY RUN rule=%s add=%d update=%d remove=%d",
+            rule.name,
+            result.added,
+            result.updated,
+            result.removed,
+        )
         return result
 
     new_managed = dict(managed_state)
@@ -108,7 +115,13 @@ async def reconcile(state, rule, settings, esi, wanderer, dry_run: bool = False)
     elapsed_ms = int((time.monotonic() - start) * 1000)
     logger.info(
         "Rule %s: added=%d updated=%d removed=%d skipped=%d errors=%d time=%dms",
-        rule.name, result.added, result.updated, result.removed, result.skipped, len(result.errors), elapsed_ms,
+        rule.name,
+        result.added,
+        result.updated,
+        result.removed,
+        result.skipped,
+        len(result.errors),
+        elapsed_ms,
     )
 
     return result

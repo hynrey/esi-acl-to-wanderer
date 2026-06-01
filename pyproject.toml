@@ -27,6 +27,7 @@ dev = [
     "pytest>=8",
     "pytest-asyncio>=0.23",
     "respx>=0.21",
+    "ruff>=0.6",
 ]
 
 [tool.pytest.ini_options]
@@ -34,3 +35,17 @@ asyncio_mode = "auto"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+# E/F: pyflakes+pycodestyle, I: import sorting, UP: pyupgrade, B: bugbear
+select = ["E", "F", "I", "UP", "B"]
+# UP042: keep `(str, Enum)` over `StrEnum` — avoids spurious type-checker noise with pydantic.
+ignore = ["UP042"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use fixtures/mocks with intentionally unused signature params.
+"tests/*" = ["B008"]

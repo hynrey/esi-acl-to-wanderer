@@ -34,7 +34,7 @@ async def run_forever(rules, settings, state) -> None:
             interval = min(r.interval_seconds for r in rules)
             try:
                 await asyncio.wait_for(stop_event.wait(), timeout=float(interval))
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 pass
 
     logger.info("Sync loop stopped cleanly")

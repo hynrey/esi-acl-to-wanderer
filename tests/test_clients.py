@@ -6,8 +6,8 @@ import httpx
 import pytest
 import respx
 
-from app.clients.esi import EsiClient, ESI_BASE
-from app.clients.sso import EsiAuthError, ESI_TOKEN_URL, get_valid_access_token
+from app.clients.esi import ESI_BASE, EsiClient
+from app.clients.sso import ESI_TOKEN_URL, EsiAuthError, get_valid_access_token
 from app.clients.wanderer import WandererClient
 from app.schemas import AclEntryType
 from app.state import StateManager
@@ -33,6 +33,7 @@ def state(tmp_path: Path) -> StateManager:
 
 
 # --- ESI ---
+
 
 @pytest.mark.asyncio
 async def test_esi_parses_access_list():
@@ -62,9 +63,7 @@ async def test_esi_parses_access_list():
 @pytest.mark.asyncio
 async def test_esi_304_returns_none_with_original_etag():
     async with respx.mock:
-        respx.get(f"{ESI_BASE}/characters/123/access-lists/1").mock(
-            return_value=httpx.Response(304)
-        )
+        respx.get(f"{ESI_BASE}/characters/123/access-lists/1").mock(return_value=httpx.Response(304))
         async with EsiClient("test-agent", "2026-05-19") as client:
             result, etag = await client.get_access_list(123, 1, "token", etag='"etag1"')
 
@@ -75,9 +74,7 @@ async def test_esi_304_returns_none_with_original_etag():
 @pytest.mark.asyncio
 async def test_esi_sends_if_none_match():
     async with respx.mock:
-        route = respx.get(f"{ESI_BASE}/characters/123/access-lists/1").mock(
-            return_value=httpx.Response(304)
-        )
+        route = respx.get(f"{ESI_BASE}/characters/123/access-lists/1").mock(return_value=httpx.Response(304))
         async with EsiClient("test-agent", "2026-05-19") as client:
             await client.get_access_list(123, 1, "token", etag='"cached"')
 
@@ -86,15 +83,19 @@ async def test_esi_sends_if_none_match():
 
 # --- SSO token refresh ---
 
+
 @pytest.mark.asyncio
 async def test_sso_refresh_on_expired_token(state: StateManager):
     async with respx.mock:
         respx.post(ESI_TOKEN_URL).mock(
-            return_value=httpx.Response(200, json={
-                "access_token": "new_access",
-                "refresh_token": "new_refresh",
-                "expires_in": 1200,
-            })
+            return_value=httpx.Response(
+                200,
+                json={
+                    "access_token": "new_access",
+                    "refresh_token": "new_refresh",
+                    "expires_in": 1200,
+                },
+            )
         )
         token = await get_valid_access_token(state, 123, "client_id", "client_secret")
 
@@ -107,9 +108,7 @@ async def test_sso_refresh_on_expired_token(state: StateManager):
 @pytest.mark.asyncio
 async def test_sso_raises_esi_auth_error_on_invalid_grant(state: StateManager):
     async with respx.mock:
-        respx.post(ESI_TOKEN_URL).mock(
-            return_value=httpx.Response(400, json={"error": "invalid_grant"})
-        )
+        respx.post(ESI_TOKEN_URL).mock(return_value=httpx.Response(400, json={"error": "invalid_grant"}))
         with pytest.raises(EsiAuthError):
             await get_valid_access_token(state, 123, "client_id", "client_secret")
 
@@ -140,6 +139,7 @@ async def test_sso_uses_cached_token_when_fresh(tmp_path: Path):
 
 # --- Wanderer ---
 
+
 @pytest.mark.asyncio
 async def test_wanderer_parses_members():
     # Wanderer wraps responses in a JSON:API-style {"data": {...}} envelope and
@@ -155,9 +155,7 @@ async def test_wanderer_parses_members():
         }
     }
     async with respx.mock:
-        respx.get(f"{WANDERER_BASE}/api/acls/acl-uuid").mock(
-            return_value=httpx.Response(200, json=payload)
-        )
+        respx.get(f"{WANDERER_BASE}/api/acls/acl-uuid").mock(return_value=httpx.Response(200, json=payload))
         async with WandererClient(WANDERER_BASE, "token") as client:
             acl = await client.get_acl("acl-uuid")
 
@@ -171,9 +169,7 @@ async def test_wanderer_parses_members():
 @pytest.mark.asyncio
 async def test_wanderer_add_idempotent_on_409():
     async with respx.mock:
-        respx.post(f"{WANDERER_BASE}/api/acls/acl-uuid/members").mock(
-            return_value=httpx.Response(409)
-        )
+        respx.post(f"{WANDERER_BASE}/api/acls/acl-uuid/members").mock(return_value=httpx.Response(409))
         respx.put(f"{WANDERER_BASE}/api/acls/acl-uuid/members/100").mock(
             return_value=httpx.Response(200, json={"ok": True})
         )

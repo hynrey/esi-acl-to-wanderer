@@ -1,5 +1,5 @@
 import logging
-import pytest
+
 from app.schemas import AccessListDTO, AclEntryDTO, AclEntryType, EsiAccessType
 from app.services.mapping import build_desired
 
@@ -37,10 +37,12 @@ def test_blocked_skipped_when_blocked_role_none():
 
 
 def test_protected_ids_excluded():
-    acl = _acl([
-        _entry(100, AclEntryType.character, EsiAccessType.allowed),
-        _entry(999, AclEntryType.character, EsiAccessType.allowed),
-    ])
+    acl = _acl(
+        [
+            _entry(100, AclEntryType.character, EsiAccessType.allowed),
+            _entry(999, AclEntryType.character, EsiAccessType.allowed),
+        ]
+    )
     result = build_desired(acl, default_role="viewer", blocked_role="blocked", protected_eve_ids={999})
     assert 100 in result
     assert 999 not in result
@@ -55,11 +57,13 @@ def test_allow_everyone_logs_warning_but_syncs_entries(caplog):
 
 
 def test_entry_types_preserved():
-    acl = _acl([
-        _entry(1, AclEntryType.character, EsiAccessType.allowed),
-        _entry(2, AclEntryType.corporation, EsiAccessType.allowed),
-        _entry(3, AclEntryType.alliance, EsiAccessType.allowed),
-    ])
+    acl = _acl(
+        [
+            _entry(1, AclEntryType.character, EsiAccessType.allowed),
+            _entry(2, AclEntryType.corporation, EsiAccessType.allowed),
+            _entry(3, AclEntryType.alliance, EsiAccessType.allowed),
+        ]
+    )
     result = build_desired(acl, default_role="viewer", blocked_role="blocked", protected_eve_ids=set())
     assert result[1].entry_type == AclEntryType.character
     assert result[2].entry_type == AclEntryType.corporation
@@ -72,21 +76,25 @@ def test_empty_acl_returns_empty():
 
 
 def test_manager_and_admin_fall_back_to_default_without_role_map():
-    acl = _acl([
-        _entry(10, AclEntryType.character, EsiAccessType.manager),
-        _entry(11, AclEntryType.character, EsiAccessType.admin),
-    ])
+    acl = _acl(
+        [
+            _entry(10, AclEntryType.character, EsiAccessType.manager),
+            _entry(11, AclEntryType.character, EsiAccessType.admin),
+        ]
+    )
     result = build_desired(acl, default_role="viewer", blocked_role="blocked", protected_eve_ids=set())
     assert result[10].role == "viewer"
     assert result[11].role == "viewer"
 
 
 def test_role_map_overrides_per_access_level():
-    acl = _acl([
-        _entry(10, AclEntryType.character, EsiAccessType.admin),
-        _entry(11, AclEntryType.character, EsiAccessType.manager),
-        _entry(12, AclEntryType.character, EsiAccessType.allowed),
-    ])
+    acl = _acl(
+        [
+            _entry(10, AclEntryType.character, EsiAccessType.admin),
+            _entry(11, AclEntryType.character, EsiAccessType.manager),
+            _entry(12, AclEntryType.character, EsiAccessType.allowed),
+        ]
+    )
     result = build_desired(
         acl,
         default_role="viewer",
@@ -94,8 +102,8 @@ def test_role_map_overrides_per_access_level():
         protected_eve_ids=set(),
         role_map={"Admin": "admin", "Manager": "admin"},
     )
-    assert result[10].role == "admin"   # Admin -> admin
-    assert result[11].role == "admin"   # Manager -> admin
+    assert result[10].role == "admin"  # Admin -> admin
+    assert result[11].role == "admin"  # Manager -> admin
     assert result[12].role == "viewer"  # Allowed unmapped -> default
 
 

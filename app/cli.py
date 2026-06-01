@@ -29,6 +29,7 @@ def run() -> None:
     rules = load_rules(settings.config_path)
     state = StateManager(settings.state_path, settings.fernet_key)
     from app.runner import run_forever
+
     asyncio.run(run_forever(rules, settings, state))
 
 
@@ -40,6 +41,7 @@ def once() -> None:
     rules = load_rules(settings.config_path)
     state = StateManager(settings.state_path, settings.fernet_key)
     from app.runner import run_once
+
     ok = asyncio.run(run_once(rules, settings, state))
     sys.exit(0 if ok else 1)
 
@@ -83,6 +85,7 @@ def sso(character_id: int) -> None:
     settings = Settings()
     state = StateManager(settings.state_path, settings.fernet_key)
     from app.clients.sso import enroll
+
     enroll(character_id, settings.esi_client_id, settings.esi_client_secret, settings.esi_callback_url, state)
 
 
