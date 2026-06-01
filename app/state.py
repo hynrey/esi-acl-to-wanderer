@@ -24,8 +24,8 @@ class StateManager:
     def _save(self) -> None:
         tmp = self._path.with_suffix(".tmp")
         tmp.write_text(json.dumps(self._data, indent=2))
+        os.chmod(tmp, 0o600)
         os.replace(tmp, self._path)
-        os.chmod(self._path, 0o600)
 
     def _enc(self, value: str) -> str:
         if self._fernet:
@@ -59,7 +59,7 @@ class StateManager:
         return self._data["rules"].get(rule_name, {}).get("etag")
 
     def get_managed(self, rule_name: str) -> dict[str, dict]:
-        return dict(self._data["rules"].get(rule_name, {}).get("managed", {}))
+        return {k: dict(v) for k, v in self._data["rules"].get(rule_name, {}).get("managed", {}).items()}
 
     def update_rule_state(self, rule_name: str, etag: str | None, managed: dict[str, dict]) -> None:
         if rule_name not in self._data["rules"]:
