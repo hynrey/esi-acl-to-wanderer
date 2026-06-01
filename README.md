@@ -101,3 +101,8 @@ restarts (ETag cache + managed set persist). For a non-resident setup, run
 ~/.pyenv/versions/3.13.0/bin/uv sync        # install deps
 ~/.pyenv/versions/3.13.0/bin/uv run pytest  # run tests (no network; respx-mocked)
 ```
+
+## License
+
+[AGPL-3.0-or-later](LICENSE). Network-use is distribution: anyone who runs a modified
+version as a service must make their source available to its users.
