@@ -8,7 +8,7 @@ import httpx
 
 ESI_TOKEN_URL = "https://login.eveonline.com/v2/oauth/token"
 ESI_AUTH_URL = "https://login.eveonline.com/v2/oauth/authorize"
-SCOPES = ["esi-access.read_lists.v1", "esi-activities.read_character.v1"]
+SCOPES = ["esi-access.read_lists.v1"]
 
 
 class EsiAuthError(Exception):
