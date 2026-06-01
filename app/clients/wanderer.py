@@ -37,7 +37,9 @@ class WandererClient:
     async def get_acl(self, acl_id: str) -> WandererAclDTO:
         resp = await self._client.get(f"/api/acls/{acl_id}")
         resp.raise_for_status()
-        data = resp.json()
+        body = resp.json()
+        # Wanderer uses a JSON:API-style envelope: {"data": {...}}
+        data = body.get("data", body)
         members = [WandererMemberDTO.from_wanderer_response(m) for m in data.get("members", [])]
         return WandererAclDTO(id=str(data["id"]), members=members)
 

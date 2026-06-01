@@ -142,12 +142,17 @@ async def test_sso_uses_cached_token_when_fresh(tmp_path: Path):
 
 @pytest.mark.asyncio
 async def test_wanderer_parses_members():
+    # Wanderer wraps responses in a JSON:API-style {"data": {...}} envelope and
+    # returns eve ids as strings; members carry an internal id alongside eve_*_id.
     payload = {
-        "id": "acl-uuid",
-        "members": [
-            {"eve_character_id": "100", "role": "viewer"},
-            {"eve_corporation_id": "200", "role": "admin"},
-        ],
+        "data": {
+            "id": "acl-uuid",
+            "name": "test",
+            "members": [
+                {"id": "internal-1", "eve_character_id": "100", "role": "viewer"},
+                {"id": "internal-2", "eve_corporation_id": "200", "role": "admin"},
+            ],
+        }
     }
     async with respx.mock:
         respx.get(f"{WANDERER_BASE}/api/acls/acl-uuid").mock(
