@@ -5,8 +5,14 @@ rules:
     wanderer_base_url: https://wanderer.example.com
     wanderer_acl_id: 19712899-ec3a-47b1-b73b-2bae221c5513
     wanderer_acl_token: ${WANDERER_ACL_TOKEN}
-    default_role: viewer
-    blocked_role: blocked     # null to skip blocked entries
+    default_role: viewer      # role for Allowed/Unspecified (and any unmapped level)
+    blocked_role: blocked     # role for ESI access "Blocked"; null to skip blocked entries
+    # ESI access level -> Wanderer role override. ESI levels: Unspecified, Allowed,
+    # Blocked, Manager, Admin. Anything not listed falls back to default_role.
+    # "Blocked" here is ignored — use blocked_role for that.
+    role_map:
+      Admin: admin
+      Manager: admin
     protected_eve_ids: []
     interval_seconds: 300
     dry_run: false

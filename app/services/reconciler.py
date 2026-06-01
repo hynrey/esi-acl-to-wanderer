@@ -42,7 +42,7 @@ async def reconcile(state, rule, settings, esi, wanderer, dry_run: bool = False)
         return result
 
     protected = set(rule.protected_eve_ids)
-    desired = build_desired(acl_dto, rule.default_role, rule.blocked_role, protected)
+    desired = build_desired(acl_dto, rule.default_role, rule.blocked_role, protected, rule.role_map)
 
     wanderer_acl = await wanderer.get_acl(rule.wanderer_acl_id)
     managed_state = state.get_managed(rule.name)

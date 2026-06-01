@@ -17,6 +17,7 @@ class RuleConfig(BaseModel):
     wanderer_acl_token: str
     default_role: str = "viewer"
     blocked_role: str | None = "blocked"
+    role_map: dict[str, str] = {}  # ESI access level (e.g. "Admin") -> Wanderer role
     protected_eve_ids: list[int] = []
     interval_seconds: int = 300
     dry_run: bool = False

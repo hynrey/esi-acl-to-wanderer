@@ -5,8 +5,10 @@ from pydantic import BaseModel
 
 class EsiAccessType(str, Enum):
     unspecified = "Unspecified"
-    allow = "allow"
-    blocked = "blocked"
+    allowed = "Allowed"
+    blocked = "Blocked"
+    manager = "Manager"  # characters only
+    admin = "Admin"  # characters only
 
 
 class EsiCharacterEntry(BaseModel):

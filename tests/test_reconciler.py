@@ -77,7 +77,7 @@ def _wanderer_mock(members: list[WandererMemberDTO]):
 @pytest.mark.asyncio
 async def test_adds_new_member(tmp_path: Path):
     state = _state(tmp_path)
-    esi = _esi_mock([AclEntryDTO(eve_id=100, entry_type=AclEntryType.character, access=EsiAccessType.allow)])
+    esi = _esi_mock([AclEntryDTO(eve_id=100, entry_type=AclEntryType.character, access=EsiAccessType.allowed)])
     wanderer = _wanderer_mock([])
 
     result = await reconcile(state, _rule(), _settings(), esi, wanderer)
@@ -140,7 +140,7 @@ async def test_protected_member_never_removed(tmp_path: Path):
 @pytest.mark.asyncio
 async def test_dry_run_makes_no_wanderer_calls(tmp_path: Path):
     state = _state(tmp_path, managed={})
-    esi = _esi_mock([AclEntryDTO(eve_id=100, entry_type=AclEntryType.character, access=EsiAccessType.allow)])
+    esi = _esi_mock([AclEntryDTO(eve_id=100, entry_type=AclEntryType.character, access=EsiAccessType.allowed)])
     wanderer = _wanderer_mock([])
 
     result = await reconcile(state, _rule(), _settings(), esi, wanderer, dry_run=True)
@@ -217,7 +217,7 @@ async def test_auth_error_sets_error_status_no_wanderer_calls(tmp_path: Path):
 async def test_managed_set_persisted_after_add(tmp_path: Path):
     """Round-trip: a successful add writes the member into persisted state."""
     state = _state(tmp_path)
-    esi = _esi_mock([AclEntryDTO(eve_id=100, entry_type=AclEntryType.character, access=EsiAccessType.allow)])
+    esi = _esi_mock([AclEntryDTO(eve_id=100, entry_type=AclEntryType.character, access=EsiAccessType.allowed)])
     wanderer = _wanderer_mock([])
 
     await reconcile(state, _rule(), _settings(), esi, wanderer)
@@ -231,7 +231,7 @@ async def test_managed_set_persisted_after_add(tmp_path: Path):
 @pytest.mark.asyncio
 async def test_idempotent_second_run(tmp_path: Path):
     state = _state(tmp_path, managed={"100": {"type": "character", "role": "viewer", "last_seen": 0}})
-    esi = _esi_mock([AclEntryDTO(eve_id=100, entry_type=AclEntryType.character, access=EsiAccessType.allow)])
+    esi = _esi_mock([AclEntryDTO(eve_id=100, entry_type=AclEntryType.character, access=EsiAccessType.allowed)])
     wanderer = _wanderer_mock([WandererMemberDTO(eve_id=100, entry_type=AclEntryType.character, role="viewer")])
 
     result = await reconcile(state, _rule(), _settings(), esi, wanderer)
