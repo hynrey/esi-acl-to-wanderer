@@ -12,3 +12,4 @@ wheels/
 # Secrets / runtime state — must not be committed
 .env
 state.json
+config.yaml
