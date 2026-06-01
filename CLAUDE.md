@@ -21,7 +21,7 @@ add. State is a single `state.json`.
 ```
 
 If the `wacl-sync` console script fails with `ModuleNotFoundError: No module named 'app'`,
-the editable install didn't register — run `uv sync --reinstall-package wanderer-acl-sync`.
+the editable install didn't register — run `uv sync --reinstall-package esi-acl-to-wanderer`.
 
 ## Architecture
 

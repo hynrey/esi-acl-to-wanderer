@@ -1,7 +1,7 @@
 [project]
-name = "wanderer-acl-sync"
+name = "esi-acl-to-wanderer"
 version = "0.1.0"
-description = "Sync EVE ESI Access Lists to Wanderer ACL"
+description = "One-way sync of an EVE ESI Access List into a Wanderer ACL"
 requires-python = ">=3.12"
 dependencies = [
     "httpx>=0.27",

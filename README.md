@@ -1,4 +1,4 @@
-# wanderer-acl-sync
+# esi-acl-to-wanderer
 
 One-way sync of an **EVE Online ESI Access List** → a **Wanderer ACL**. A lean Python
 service: no database, no broker. ESI is the source of truth; the service brings the
