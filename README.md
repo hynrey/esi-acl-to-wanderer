@@ -91,6 +91,10 @@ restarts (ETag cache + managed set persist). For a non-resident setup, run
 `command: once` from an external systemd-timer/cron instead (see comment in
 `docker-compose.yml`).
 
+**Continuous deployment** (cron-pull, zero GitHub secrets / inbound ports) is described
+in **[docs/DEPLOY.md](docs/DEPLOY.md)** — the server polls the public repo and rebuilds
+on change via `scripts/deploy.sh`.
+
 ## Safety guarantees
 
 - Removal/role-update only ever target the `managed` set — members the service itself
