@@ -44,9 +44,27 @@ async def get_valid_access_token(state, character_id: int, client_id: str, clien
     return data["access_token"]
 
 
+def _extract_code(pasted: str) -> str | None:
+    """Accept either a bare auth code or a full redirect URL containing ?code=..."""
+    pasted = pasted.strip()
+    if not pasted:
+        return None
+    if "code=" in pasted:
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(pasted).query)
+        return qs.get("code", [None])[0]
+    return pasted
+
+
 def enroll(character_id: int, client_id: str, client_secret: str, callback_url: str, state) -> None:
-    """One-shot SSO enrollment. Opens browser, waits for callback, saves token."""
+    """One-shot SSO enrollment.
+
+    Starts a localhost callback server AND accepts a manually pasted redirect URL /
+    code. Whichever arrives first wins — the manual path is the fallback for
+    environments (WSL, remote shells, headless) where the browser cannot reach the
+    localhost callback server.
+    """
     import secrets
+    import threading
 
     state_param = secrets.token_urlsafe(16)
     parsed = urllib.parse.urlparse(callback_url)
@@ -61,27 +79,58 @@ def enroll(character_id: int, client_id: str, client_secret: str, callback_url: 
     })
 
     code_holder: dict = {}
+    got_code = threading.Event()
 
     class _Handler(BaseHTTPRequestHandler):
         def do_GET(self):
             qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-            code_holder["code"] = qs.get("code", [None])[0]
+            code = qs.get("code", [None])[0]
+            if code and not got_code.is_set():
+                code_holder["code"] = code
+                got_code.set()
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(b"Authorization received. You can close this tab.")
+            self.wfile.write(b"Authorization received. You can close this tab and return to the terminal.")
 
         def log_message(self, *args):
             pass
 
-    print(f"Opening browser for EVE SSO...\n{auth_url}")
-    webbrowser.open(auth_url)
+    def _serve(server: HTTPServer) -> None:
+        while not got_code.is_set():
+            server.handle_request()
+
+    print("Open this URL in a browser and authorize:\n")
+    print(auth_url + "\n")
+    webbrowser.open(auth_url)  # no-op / harmless if no browser available
 
     server = HTTPServer(("localhost", port), _Handler)
-    server.handle_request()
+    server.timeout = 1  # so the serve loop can notice got_code being set elsewhere
+    threading.Thread(target=_serve, args=(server,), daemon=True).start()
+
+    print(
+        f"Waiting for the callback on http://localhost:{port}/callback ...\n"
+        "If the browser can't reach localhost (common on WSL/remote), copy the URL it\n"
+        "redirected to (or just the code= value) and paste it here, then press Enter:"
+    )
+
+    # Manual paste path. Runs in the main thread; if the auto-server already captured
+    # the code, this input is ignored.
+    try:
+        pasted = input("> ")
+    except EOFError:
+        pasted = ""
+
+    if not got_code.is_set():
+        code = _extract_code(pasted)
+        if code:
+            code_holder["code"] = code
+            got_code.set()
+
+    server.server_close()
 
     code = code_holder.get("code")
     if not code:
-        raise EsiAuthError("No authorization code received from SSO callback")
+        raise EsiAuthError("No authorization code received (neither callback nor manual paste)")
 
     resp = httpx.post(
         ESI_TOKEN_URL,
