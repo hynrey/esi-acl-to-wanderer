@@ -1,6 +1,7 @@
 import os
 import re
 from pathlib import Path
+from typing import Any
 
 import yaml
 from pydantic import BaseModel
@@ -21,7 +22,7 @@ class RuleConfig(BaseModel):
     dry_run: bool = False
 
 
-def _interpolate(obj: object) -> object:
+def _interpolate(obj: Any) -> Any:
     if isinstance(obj, str):
         def replace(m: re.Match) -> str:
             var = m.group(1)
