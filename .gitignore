@@ -13,3 +13,4 @@ wheels/
 .env
 state.json
 config.yaml
+data/

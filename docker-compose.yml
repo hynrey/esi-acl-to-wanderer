@@ -3,13 +3,19 @@ services:
     build: .
     restart: unless-stopped
     command: run
-    volumes:
-      - ./state.json:/app/state.json
-      - ./config.yaml:/app/config.yaml:ro
+    # Pulls ESI_CLIENT_ID/SECRET, FERNET_KEY, WANDERER_ACL_TOKEN, ESI_USER_AGENT, etc.
+    # from .env into the container environment (config.yaml's ${WANDERER_ACL_TOKEN}
+    # interpolation reads os.environ, so the token must be present here).
+    env_file: .env
     environment:
-      ESI_CLIENT_ID: ${ESI_CLIENT_ID}
-      ESI_CLIENT_SECRET: ${ESI_CLIENT_SECRET}
-      FERNET_KEY: ${FERNET_KEY:-}
+      # Override the .env paths with in-container paths. state.json lives in a mounted
+      # DIRECTORY (not a single-file bind mount) so the atomic tmp+os.replace write
+      # works — renaming over a single-file bind mount fails with EBUSY.
+      STATE_PATH: /app/data/state.json
+      CONFIG_PATH: /app/config.yaml
+    volumes:
+      - ./data:/app/data
+      - ./config.yaml:/app/config.yaml:ro
     # To use with systemd-timer/cron instead of long-running loop:
     #   command: once
     #   restart: "no"
