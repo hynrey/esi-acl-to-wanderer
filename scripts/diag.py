@@ -18,7 +18,7 @@ from app.state import StateManager
 
 async def main() -> None:
     character_id = int(sys.argv[1])
-    access_list_id = int(sys.argv[2])
+    access_list_id = int(sys.argv[2]) if len(sys.argv) > 2 else None
 
     settings = Settings()
     state = StateManager(settings.state_path, settings.fernet_key)
@@ -32,17 +32,23 @@ async def main() -> None:
     print("SCOPES:", claims.get("scp"))
     print("TOKEN sub:", claims.get("sub"))
 
-    url = f"https://esi.evetech.net/characters/{character_id}/access-lists/{access_list_id}"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/json",
+        "User-Agent": settings.esi_user_agent,
+        "X-Compatibility-Date": settings.esi_compatibility_date,
+    }
+    if access_list_id is None:
+        # List every access-list this token can see.
+        url = f"https://esi.evetech.net/characters/{character_id}/access-lists/"
+    else:
+        url = f"https://esi.evetech.net/characters/{character_id}/access-lists/{access_list_id}"
+
     async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            url,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "X-Compatibility-Date": settings.esi_compatibility_date,
-            },
-        )
+        resp = await client.get(url, headers=headers)
+    print("GET", url)
     print("HTTP", resp.status_code)
-    print(resp.text[:800])
+    print(resp.text[:1000])
 
 
 if __name__ == "__main__":
